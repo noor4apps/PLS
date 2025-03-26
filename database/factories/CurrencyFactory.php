@@ -17,8 +17,8 @@ class CurrencyFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->randomElement([null, 'US Dollar', 'Canadian Dollar', 'Euro', 'Saudi Riyal']),
-            'code' => $this->faker->randomElement([null, 'USD', 'CAD', 'EUR', 'SAR'])
+            'name' => $this->faker->randomElement(['US Dollar', 'Canadian Dollar', 'Euro', 'Saudi Riyal']),
+            'code' => $this->faker->unique()->currencyCode(),
         ];
     }
 }
