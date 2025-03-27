@@ -128,4 +128,93 @@ class ProductPriceTest extends TestCase
         $response->assertStatus(200)->assertJsonPath('data.price', 100);
     }
 
+    #[Test]
+    public function it_applies_general_price_if_no_country_or_currency_provided()
+    {
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => null,
+            'currency_code' => null,
+            'price' => 88.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => '2099-12-31',
+            'priority' => 1,
+        ]);
+
+        $response = $this->getJson("/api/products/{$this->product->id}");
+        $response->assertStatus(200)->assertJsonPath('data.price', 88);
+    }
+
+    #[Test]
+    public function it_throws_exception_if_multiple_price_lists_have_same_priority_and_criteria()
+    {
+        $this->expectException(PriceListAmbiguityException::class);
+
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => 'US',
+            'currency_code' => 'USD',
+            'price' => 90.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => '2099-12-31',
+            'priority' => 1,
+        ]);
+
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => 'US',
+            'currency_code' => 'USD',
+            'price' => 85.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => '2099-12-31',
+            'priority' => 1,
+        ]);
+
+        $this->getJson("/api/products/{$this->product->id}?country_code=US&currency_code=USD");
+    }
+
+    #[Test]
+    public function it_ignores_expired_price_lists()
+    {
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => 'US',
+            'currency_code' => 'USD',
+            'price' => 75.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => Carbon::now()->subDay()->format('Y-m-d'),
+            'priority' => 1,
+        ]);
+
+        $response = $this->getJson("/api/products/{$this->product->id}?country_code=US&currency_code=USD");
+        $response->assertStatus(200)->assertJsonPath('data.price', 100);
+    }
+
+    #[Test]
+    public function it_applies_specific_price_over_general_price_with_same_priority()
+    {
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => null,
+            'currency_code' => 'USD',
+            'price' => 95.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => '2099-12-31',
+            'priority' => 1,
+        ]);
+
+        PriceList::factory()->create([
+            'product_id' => $this->product->id,
+            'country_code' => 'US',
+            'currency_code' => 'USD',
+            'price' => 85.00,
+            'starts_at' => '2020-01-01',
+            'ends_at' => '2099-12-31',
+            'priority' => 1,
+        ]);
+
+        $response = $this->getJson("/api/products/{$this->product->id}?country_code=US&currency_code=USD");
+        $response->assertStatus(200)->assertJsonPath('data.price', 85);
+    }
+
 }
