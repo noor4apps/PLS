@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filters;
+namespace App\Actions;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
-class ProductFilters
+class FilterProductsAction
 {
     public static function apply(Collection $products, Request $request): Collection
     {

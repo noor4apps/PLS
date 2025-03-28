@@ -2,7 +2,6 @@
 
 namespace App\Actions;
 
-use App\Filters\ProductFilters;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -21,7 +20,7 @@ class GetProductsAction
             return $product;
         });
 
-        $filteredProducts = ProductFilters::apply(collect($products), $request);
+        $filteredProducts = FilterProductsAction::apply(collect($products), $request);
 
         return $filteredProducts->map(fn ($product) => new ProductResource($product));
     }
